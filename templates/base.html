@@ -10,29 +10,37 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <div class="top-ribbon">
-        <div class="top-ribbon-inner">
-            <span>Free delivery on orders above Rs. 499</span>
-            <span>Fresh groceries, snacks, beverages and daily essentials</span>
-        </div>
-    </div>
-
     <header class="site-header-wrap">
-        <div class="site-header">
-            <a href="{{ url_for('home') }}" class="brand">ZMart</a>
-            <nav class="nav-links">
-                <a href="{{ url_for('home') }}">Home</a>
-                <a href="{{ url_for('products') }}">Products</a>
-                <a href="{{ url_for('ai_assistant') }}">Assistant</a>
+        <div class="site-header header-market">
+            <a href="{{ url_for('home') }}" class="brand brand-block">ZMart</a>
+
+            <div class="header-status">
+                <strong>Delivering in 10 minutes</strong>
+                <span>Fresh groceries, snacks, drinks and daily essentials</span>
+            </div>
+
+            <form method="get" action="{{ url_for('products') }}" class="header-search">
+                <span class="search-icon">&#128269;</span>
+                <input type="text" name="search" value="{{ request.args.get('search', '') }}" placeholder='Search "bread"'>
+            </form>
+
+            <div class="header-actions">
                 {% if session.get('user_id') %}
-                    <a href="{{ url_for('dashboard') }}">Dashboard</a>
-                    <a href="{{ url_for('cart') }}">Cart</a>
-                    <a href="{{ url_for('logout') }}">Logout</a>
+                    <a href="{{ url_for('favorites') }}" class="header-link">Favourites</a>
+                    <a href="{{ url_for('dashboard') }}" class="header-link">Account</a>
+                    <a href="{{ url_for('logout') }}" class="header-link">Logout</a>
+                    <button type="button" class="cart-trigger cart-trigger-rich" data-cart-open>
+                        <span class="cart-icon">&#128722;</span>
+                        <span>My Cart</span>
+                        {% if header_cart_count %}
+                            <span class="cart-count">{{ header_cart_count }}</span>
+                        {% endif %}
+                    </button>
                 {% else %}
-                    <a href="{{ url_for('login') }}">Login</a>
-                    <a href="{{ url_for('register') }}" class="nav-cta">Register</a>
+                    <a href="{{ url_for('login') }}" class="header-link login-link">Login</a>
+                    <a href="{{ url_for('register') }}" class="register-inline">Don't have an account? Register</a>
                 {% endif %}
-            </nav>
+            </div>
         </div>
     </header>
 
@@ -49,6 +57,62 @@
     <main>
         {% block content %}{% endblock %}
     </main>
+
+    <div class="quick-toast" data-quick-toast></div>
+    <a href="{{ url_for('ai_assistant') }}" class="ai-float-button" aria-label="Open AI assistant">
+        <span class="ai-float-icon">AI</span>
+        <span>Assistant</span>
+    </a>
+
+    {% if session.get('user_id') %}
+        <div class="cart-overlay" data-cart-overlay></div>
+        <aside class="mini-cart-drawer" data-cart-drawer>
+            <div class="mini-cart-header">
+                <div>
+                    <strong>Your Cart</strong>
+                    <p>{{ header_cart_count }} item{% if header_cart_count != 1 %}s{% endif %}</p>
+                </div>
+                <button type="button" class="mini-cart-close" data-cart-close aria-label="Close cart">&times;</button>
+            </div>
+
+            <div class="mini-cart-body">
+                {% for item in header_cart_items %}
+                    <article class="mini-cart-item">
+                        <img src="{{ item.image_url or 'https://images.unsplash.com/photo-1583258292688-d0213dc5a3a8?auto=format&fit=crop&w=400&q=80' }}" alt="{{ item.name }}">
+                        <div>
+                            <h4>{{ item.name }}</h4>
+                            <div class="mini-cart-qty">
+                                <form method="post" action="{{ url_for('update_cart_item', cart_id=item.cart_id) }}">
+                                    <input type="hidden" name="action" value="decrease">
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    <button type="submit" class="qty-btn">-</button>
+                                </form>
+                                <span>Qty: {{ item.quantity }}</span>
+                                <form method="post" action="{{ url_for('update_cart_item', cart_id=item.cart_id) }}">
+                                    <input type="hidden" name="action" value="increase">
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    <button type="submit" class="qty-btn">+</button>
+                                </form>
+                            </div>
+                            <strong>Rs. {{ item.price }}</strong>
+                        </div>
+                    </article>
+                {% else %}
+                    <div class="mini-cart-empty">
+                        <p>Your cart is empty right now.</p>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="mini-cart-footer">
+                <div class="mini-cart-total">
+                    <span>Total</span>
+                    <strong>Rs. {{ header_cart_total }}</strong>
+                </div>
+                <a href="{{ url_for('cart') }}" class="btn btn-primary">View Cart</a>
+            </div>
+        </aside>
+    {% endif %}
 
     <footer class="site-footer">
         <p>ZMart Supermart</p>

@@ -4,8 +4,8 @@
 <section class="auth-layout">
     <div class="auth-panel">
         <span class="eyebrow">Create Account</span>
-        <h1>Register new customers directly into the MySQL user table.</h1>
-        <p>This helps you show frontend form design and backend insertion during evaluation.</p>
+        <h1>Create your account and start shopping faster.</h1>
+        <p>Save your details, manage your basket, and keep track of favourite products easily.</p>
     </div>
     <form method="post" class="auth-form glass-card">
         <h2>Register</h2>
@@ -18,6 +18,7 @@
         <label>Phone</label>
         <input type="text" name="phone" placeholder="Enter phone number" required>
         <button type="submit" class="btn btn-primary">Create Account</button>
+        <p class="auth-switch-text">Already have an account? <a href="{{ url_for('login') }}">Login</a></p>
     </form>
 </section>
 {% endblock %}

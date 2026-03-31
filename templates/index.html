@@ -2,15 +2,13 @@
 {% block title %}ZMart | Supermart{% endblock %}
 {% block content %}
 <section class="hero-simple">
-    <div class="hero-simple-inner">
-        <h1>Fresh Groceries,<br>Delivered to Your Door</h1>
-        <p>Save big on daily essentials. Shop smart with ZMart.</p>
-
-        <form method="get" action="{{ url_for('products') }}" class="hero-search">
-            <input type="text" name="search" placeholder="Search products...">
-            <button type="submit" class="btn btn-primary">Search</button>
-        </form>
-    </div>
+    <a href="{{ url_for('products') }}" class="hero-banner-link">
+        <img
+            src="https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=2700/layout-engine/2026-01/Frame-1437256605-2-2.jpg"
+            alt="Stock up on daily essentials"
+            class="hero-banner-full"
+        >
+    </a>
 </section>
 
 <section class="feature-strip">
@@ -18,6 +16,72 @@
         <span>Free delivery over Rs. 500</span>
         <span>Same day delivery</span>
         <span>100% quality assured</span>
+    </div>
+</section>
+
+<section class="section banner-section">
+    <div class="promo-slider" data-slider>
+        <div class="promo-track" data-slider-track>
+            <article class="promo-slide slide-green is-active">
+                <div class="promo-slide-copy">
+                    <span class="promo-kicker">Fresh Savings</span>
+                    <h2>Kitchen staples at prices you will love.</h2>
+                    <p>Stock up on fruits, beverages, snacks, and home essentials with weekly offers.</p>
+                    <a href="{{ url_for('products') }}" class="btn banner-btn">Shop Now</a>
+                </div>
+                <div class="promo-slide-art">
+                    <div class="promo-bottle"></div>
+                    <div class="promo-card-stack">
+                        <span>Fruits</span>
+                        <span>Snacks</span>
+                        <span>Drinks</span>
+                    </div>
+                </div>
+            </article>
+
+            <article class="promo-slide slide-cream">
+                <div class="promo-slide-copy">
+                    <span class="promo-kicker">Weekend Deals</span>
+                    <h2>Up to 40% off on everyday grocery picks.</h2>
+                    <p>Browse popular household products and build your basket in a few clicks.</p>
+                    <a href="{{ url_for('products') }}" class="btn banner-btn">Explore Offers</a>
+                </div>
+                <div class="promo-slide-art">
+                    <div class="promo-badge-circle">40%</div>
+                    <div class="promo-box-grid">
+                        <span>Milk</span>
+                        <span>Rice</span>
+                        <span>Soap</span>
+                        <span>Juice</span>
+                    </div>
+                </div>
+            </article>
+
+            <article class="promo-slide slide-mint">
+                <div class="promo-slide-copy">
+                    <span class="promo-kicker">Quick Delivery</span>
+                    <h2>Daily essentials delivered with a cleaner shopping flow.</h2>
+                    <p>Search products, view details, and place orders from one simple storefront.</p>
+                    <a href="{{ url_for('products') }}" class="btn banner-btn">Start Shopping</a>
+                </div>
+                <div class="promo-slide-art">
+                    <div class="promo-delivery-card">
+                        <strong>Today’s Picks</strong>
+                        <span>Fresh stock updated</span>
+                        <span>Fast order flow</span>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <button class="slider-arrow slider-arrow-left" type="button" data-slider-prev aria-label="Previous slide">&#8249;</button>
+        <button class="slider-arrow slider-arrow-right" type="button" data-slider-next aria-label="Next slide">&#8250;</button>
+
+        <div class="slider-dots" data-slider-dots>
+            <button class="slider-dot is-active" type="button" aria-label="Slide 1"></button>
+            <button class="slider-dot" type="button" aria-label="Slide 2"></button>
+            <button class="slider-dot" type="button" aria-label="Slide 3"></button>
+        </div>
     </div>
 </section>
 
@@ -43,6 +107,71 @@
 
 <section class="section section-top-tight">
     <div class="section-heading simple-heading">
+        <h2>Shop by Category</h2>
+    </div>
+
+    <div class="category-card-grid">
+        {% for category in categories %}
+            <a href="{{ url_for('products', category=category.name) }}" class="category-card">
+                <div class="category-card-icon">
+                    {% if category.name|lower == 'fruits' %}
+                        <span>🍎</span>
+                    {% elif category.name|lower == 'beverages' %}
+                        <span>🥤</span>
+                    {% elif category.name|lower == 'snacks' %}
+                        <span>🍪</span>
+                    {% elif category.name|lower == 'cleaning' %}
+                        <span>🧴</span>
+                    {% else %}
+                        <span>🛒</span>
+                    {% endif %}
+                </div>
+                <div class="category-card-copy">
+                    <h3>{{ category.name }}</h3>
+                    <p>{{ category.description or 'Browse products in this category.' }}</p>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="section section-top-tight">
+    <div class="offers-header">
+        <div class="section-heading simple-heading no-margin">
+            <h2>Top Offers</h2>
+        </div>
+        <div class="offers-controls">
+            <button type="button" class="offers-arrow" data-offers-prev aria-label="Previous offers">&#8249;</button>
+            <button type="button" class="offers-arrow" data-offers-next aria-label="Next offers">&#8250;</button>
+        </div>
+    </div>
+
+    <div class="offers-scroller" data-offers-scroller>
+        <article class="offer-card offer-card-green">
+            <span class="offer-card-badge">Up to 20% off</span>
+            <h3>Fresh fruits and vegetables</h3>
+            <p>Seasonal picks and daily essentials at better prices.</p>
+        </article>
+        <article class="offer-card offer-card-yellow">
+            <span class="offer-card-badge">Combo savings</span>
+            <h3>Snacks and beverages</h3>
+            <p>Perfect pairings for your pantry and quick cravings.</p>
+        </article>
+        <article class="offer-card offer-card-mint">
+            <span class="offer-card-badge">Stock up</span>
+            <h3>Cleaning and household care</h3>
+            <p>Keep your home ready with smart everyday buys.</p>
+        </article>
+        <article class="offer-card offer-card-peach">
+            <span class="offer-card-badge">Trending now</span>
+            <h3>Breakfast and pantry staples</h3>
+            <p>Quick picks for mornings, lunches, and dinner prep.</p>
+        </article>
+    </div>
+</section>
+
+<section class="section section-top-tight">
+    <div class="section-heading simple-heading">
         <h2>Shop by Products</h2>
     </div>
 
@@ -57,6 +186,19 @@
         {% for product in products %}
             <article class="product-card simple-product-card">
                 <div class="simple-image-wrap">
+                    {% if loop.index == 1 %}
+                        <span class="product-badge badge-sale">Sale</span>
+                    {% elif loop.index == 2 %}
+                        <span class="product-badge badge-new">New</span>
+                    {% endif %}
+                    {% if session.get('user_id') %}
+                        <form method="post" action="{{ url_for('toggle_favorite', product_id=product.product_id) }}" class="wishlist-form" data-wishlist-form>
+                            <input type="hidden" name="next" value="{{ request.path }}">
+                            <button type="submit" class="wishlist-btn {% if product.product_id in favorite_ids %}is-saved{% endif %}" data-wishlist-button aria-label="Toggle favourite">
+                                {% if product.product_id in favorite_ids %}&#10084;{% else %}&#9825;{% endif %}
+                            </button>
+                        </form>
+                    {% endif %}
                     <a href="{{ url_for('product_detail', product_id=product.product_id) }}">
                         <img src="{{ product.image_url or 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80' }}" alt="{{ product.name }}">
                     </a>
@@ -68,6 +210,10 @@
                     <div class="product-meta">
                         <strong>Rs. {{ product.price }}</strong>
                         <span>{{ product.stock_quantity }} in stock</span>
+                    </div>
+                    <div class="card-hover-meta">
+                        <span>Fast delivery</span>
+                        <span>{{ product.category }}</span>
                     </div>
                     <div class="card-action-row">
                         <a href="{{ url_for('product_detail', product_id=product.product_id) }}" class="btn btn-secondary btn-small">View More</a>

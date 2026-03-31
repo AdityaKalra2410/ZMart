@@ -29,6 +29,19 @@
         {% for product in products %}
             <article class="product-card simple-product-card">
                 <div class="simple-image-wrap">
+                    {% if loop.index % 5 == 1 %}
+                        <span class="product-badge badge-sale">Sale</span>
+                    {% elif loop.index % 5 == 2 %}
+                        <span class="product-badge badge-new">New</span>
+                    {% endif %}
+                    {% if session.get('user_id') %}
+                        <form method="post" action="{{ url_for('toggle_favorite', product_id=product.product_id) }}" class="wishlist-form" data-wishlist-form>
+                            <input type="hidden" name="next" value="{{ request.full_path }}">
+                            <button type="submit" class="wishlist-btn {% if product.product_id in favorite_ids %}is-saved{% endif %}" data-wishlist-button aria-label="Toggle favourite">
+                                {% if product.product_id in favorite_ids %}&#10084;{% else %}&#9825;{% endif %}
+                            </button>
+                        </form>
+                    {% endif %}
                     <a href="{{ url_for('product_detail', product_id=product.product_id) }}">
                         <img src="{{ product.image_url or 'https://images.unsplash.com/photo-1583258292688-d0213dc5a3a8?auto=format&fit=crop&w=800&q=80' }}" alt="{{ product.name }}">
                     </a>
@@ -40,6 +53,10 @@
                     <div class="product-meta">
                         <strong>Rs. {{ product.price }}</strong>
                         <span>{{ product.stock_quantity }} in stock</span>
+                    </div>
+                    <div class="card-hover-meta">
+                        <span>Fresh stock</span>
+                        <span>{{ product.category }}</span>
                     </div>
                     <div class="card-action-row">
                         <a href="{{ url_for('product_detail', product_id=product.product_id) }}" class="btn btn-secondary btn-small">View Details</a>

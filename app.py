@@ -87,6 +87,78 @@ def fetch_categories():
         return cursor.fetchall()
 
 
+def fetch_cart_items_for_user(user_id):
+    with db_cursor() as (_, cursor):
+        cursor.execute(
+            """
+            SELECT c.cart_id, c.product_id, c.quantity, p.name, p.price, p.image_url
+            FROM cart c
+            JOIN products p ON p.product_id = c.product_id
+            WHERE c.user_id = %s
+            ORDER BY c.added_at DESC
+            """,
+            (user_id,),
+        )
+        return cursor.fetchall()
+
+
+def fetch_favorite_ids(user_id):
+    with db_cursor() as (_, cursor):
+        cursor.execute("SELECT product_id FROM favorites WHERE user_id = %s", (user_id,))
+        return {row["product_id"] for row in cursor.fetchall()}
+
+
+def fetch_favorite_products(user_id):
+    with db_cursor() as (_, cursor):
+        cursor.execute(
+            """
+            SELECT
+                p.product_id,
+                p.name,
+                c.name AS category,
+                p.price,
+                p.stock_quantity,
+                p.image_url,
+                p.description
+            FROM favorites f
+            JOIN products p ON p.product_id = f.product_id
+            JOIN categories c ON p.category_id = c.category_id
+            WHERE f.user_id = %s
+            ORDER BY f.favorite_id DESC
+            """,
+            (user_id,),
+        )
+        return cursor.fetchall()
+
+
+@app.context_processor
+def inject_header_state():
+    cart_items = []
+    cart_count = 0
+    cart_total = 0
+    favorite_ids = set()
+
+    user_id = session.get("user_id")
+    if user_id:
+        try:
+            cart_items = fetch_cart_items_for_user(user_id)
+            cart_count = sum(item["quantity"] for item in cart_items)
+            cart_total = sum(item["price"] * item["quantity"] for item in cart_items)
+            favorite_ids = fetch_favorite_ids(user_id)
+        except Exception:
+            cart_items = []
+            cart_count = 0
+            cart_total = 0
+            favorite_ids = set()
+
+    return {
+        "header_cart_items": cart_items[:4],
+        "header_cart_count": cart_count,
+        "header_cart_total": cart_total,
+        "favorite_ids": favorite_ids,
+    }
+
+
 @app.route("/")
 def home():
     products = []
@@ -212,6 +284,56 @@ def product_detail(product_id):
     return render_template("product_detail.html", product=product, db_error=db_error)
 
 
+@app.route("/favorites")
+@login_required
+def favorites():
+    db_error = None
+    products = []
+    try:
+        products = fetch_favorite_products(session["user_id"])
+    except Exception as exc:
+        db_error = str(exc)
+    return render_template("favorites.html", products=products, db_error=db_error)
+
+
+@app.route("/favorites/toggle/<int:product_id>", methods=["POST"])
+@login_required
+def toggle_favorite(product_id):
+    redirect_to = request.form.get("next") or request.referrer or url_for("products")
+    try:
+        with db_cursor() as (_, cursor):
+            cursor.execute(
+                "SELECT favorite_id FROM favorites WHERE user_id = %s AND product_id = %s",
+                (session["user_id"], product_id),
+            )
+            favorite = cursor.fetchone()
+
+            if favorite:
+                cursor.execute(
+                    "DELETE FROM favorites WHERE favorite_id = %s",
+                    (favorite["favorite_id"],),
+                )
+                is_favorite = False
+                flash("Removed from favourites.", "info")
+            else:
+                cursor.execute(
+                    "INSERT INTO favorites (user_id, product_id) VALUES (%s, %s)",
+                    (session["user_id"], product_id),
+                )
+                is_favorite = True
+                flash("Added to favourites.", "success")
+    except Exception as exc:
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"success": False, "message": str(exc)}), 400
+        flash(f"Could not update favourites: {exc}", "danger")
+        return redirect(redirect_to)
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify({"success": True, "is_favorite": is_favorite})
+
+    return redirect(redirect_to)
+
+
 @app.route("/cart", methods=["GET", "POST"])
 @login_required
 def cart():
@@ -245,6 +367,65 @@ def cart():
 
     total = sum(item["price"] * item["quantity"] for item in cart_items)
     return render_template("cart.html", cart_items=cart_items, total=total)
+
+
+@app.route("/cart/remove/<int:cart_id>", methods=["POST"])
+@login_required
+def remove_cart_item(cart_id):
+    try:
+        with db_cursor() as (_, cursor):
+            cursor.execute(
+                "DELETE FROM cart WHERE cart_id = %s AND user_id = %s",
+                (cart_id, session["user_id"]),
+            )
+        flash("Item removed from cart.", "info")
+    except Exception as exc:
+        flash(f"Could not remove item: {exc}", "danger")
+
+    return redirect(url_for("cart"))
+
+
+@app.route("/cart/update/<int:cart_id>", methods=["POST"])
+@login_required
+def update_cart_item(cart_id):
+    action = request.form.get("action", "").strip()
+    redirect_to = request.form.get("next") or request.referrer or url_for("cart")
+
+    try:
+        with db_cursor() as (_, cursor):
+            cursor.execute(
+                "SELECT quantity FROM cart WHERE cart_id = %s AND user_id = %s",
+                (cart_id, session["user_id"]),
+            )
+            item = cursor.fetchone()
+
+            if not item:
+                flash("Cart item not found.", "warning")
+                return redirect(redirect_to)
+
+            quantity = item["quantity"]
+            if action == "increase":
+                quantity += 1
+                cursor.execute(
+                    "UPDATE cart SET quantity = %s WHERE cart_id = %s AND user_id = %s",
+                    (quantity, cart_id, session["user_id"]),
+                )
+            elif action == "decrease":
+                quantity -= 1
+                if quantity <= 0:
+                    cursor.execute(
+                        "DELETE FROM cart WHERE cart_id = %s AND user_id = %s",
+                        (cart_id, session["user_id"]),
+                    )
+                else:
+                    cursor.execute(
+                        "UPDATE cart SET quantity = %s WHERE cart_id = %s AND user_id = %s",
+                        (quantity, cart_id, session["user_id"]),
+                    )
+    except Exception as exc:
+        flash(f"Could not update quantity: {exc}", "danger")
+
+    return redirect(redirect_to)
 
 
 @app.route("/checkout", methods=["POST"])

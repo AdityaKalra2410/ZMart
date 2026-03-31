@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Favourites | ZMart{% endblock %}
+{% block content %}
+<section class="section">
+    <div class="section-heading simple-heading">
+        <h1>Your Favourites</h1>
+        <p>Products you have saved for later shopping.</p>
+    </div>
+
+    {% if db_error %}
+        <div class="info-card warning-card">
+            <strong>Favourites could not be loaded.</strong>
+            <p>{{ db_error }}</p>
+        </div>
+    {% endif %}
+
+    <div class="product-grid product-grid-simple">
+        {% for product in products %}
+            <article class="product-card simple-product-card">
+                <div class="simple-image-wrap">
+                    <form method="post" action="{{ url_for('toggle_favorite', product_id=product.product_id) }}" class="wishlist-form" data-wishlist-form>
+                        <input type="hidden" name="next" value="{{ request.path }}">
+                        <button type="submit" class="wishlist-btn is-saved" data-wishlist-button aria-label="Remove from favourites">&#10084;</button>
+                    </form>
+                    <a href="{{ url_for('product_detail', product_id=product.product_id) }}">
+                        <img src="{{ product.image_url or 'https://images.unsplash.com/photo-1583258292688-d0213dc5a3a8?auto=format&fit=crop&w=800&q=80' }}" alt="{{ product.name }}">
+                    </a>
+                </div>
+                <div class="product-body">
+                    <span class="chip">{{ product.category }}</span>
+                    <h3><a href="{{ url_for('product_detail', product_id=product.product_id) }}">{{ product.name }}</a></h3>
+                    <p>{{ product.description or 'Saved for your next shopping run.' }}</p>
+                    <div class="product-meta">
+                        <strong>Rs. {{ product.price }}</strong>
+                        <span>{{ product.stock_quantity }} in stock</span>
+                    </div>
+                    <div class="card-action-row">
+                        <a href="{{ url_for('product_detail', product_id=product.product_id) }}" class="btn btn-secondary btn-small">View Details</a>
+                    </div>
+                </div>
+            </article>
+        {% else %}
+            <div class="info-card">
+                <strong>No favourites yet.</strong>
+                <p>Tap the heart icon on any product to save it here.</p>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
