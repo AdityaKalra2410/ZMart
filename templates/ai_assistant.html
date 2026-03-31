@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}AI Assistant | ZMart{% endblock %}
+{% block content %}
+<section class="section narrow-section">
+    <div class="section-heading">
+        <h1>ZMart AI Assistant</h1>
+        <p>Simple shopping suggestion module for your project evaluation demo.</p>
+    </div>
+
+    <form method="post" class="glass-card form-card">
+        <label>Ask for a recommendation</label>
+        <textarea name="prompt" rows="5" placeholder="Example: suggest healthy breakfast items under a budget"></textarea>
+        <button type="submit" class="btn btn-primary">Get Suggestion</button>
+    </form>
+
+    {% if suggestion %}
+        <div class="info-card">
+            <strong>Assistant Response</strong>
+            <p>{{ suggestion }}</p>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

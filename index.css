@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --background: 45 20% 97%;
+    --foreground: 220 25% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 25% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 25% 10%;
+
+    --primary: 145 63% 32%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 45 80% 55%;
+    --secondary-foreground: 220 25% 10%;
+
+    --muted: 45 15% 92%;
+    --muted-foreground: 220 10% 45%;
+
+    --accent: 18 85% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 145 63% 32%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 145 63% 32%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 145 20% 95%;
+    --sidebar-accent-foreground: 145 63% 25%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 145 63% 32%;
+
+    --hero-gradient: linear-gradient(135deg, hsl(145, 63%, 32%), hsl(145, 50%, 42%));
+    --badge-sale: 0 72% 51%;
+    --badge-new: 200 80% 50%;
+    --surface-elevated: 0 0% 100%;
+
+    --font-heading: 'Space Grotesk', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  .dark {
+    --background: 220 25% 8%;
+    --foreground: 45 20% 95%;
+    --card: 220 20% 12%;
+    --card-foreground: 45 20% 95%;
+    --popover: 220 20% 12%;
+    --popover-foreground: 45 20% 95%;
+    --primary: 145 63% 42%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 45 70% 50%;
+    --secondary-foreground: 220 25% 10%;
+    --muted: 220 15% 18%;
+    --muted-foreground: 220 10% 60%;
+    --accent: 18 85% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 15% 22%;
+    --input: 220 15% 22%;
+    --ring: 145 63% 42%;
+    --sidebar-background: 220 25% 10%;
+    --sidebar-foreground: 45 20% 90%;
+    --sidebar-primary: 145 63% 42%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 15% 15%;
+    --sidebar-accent-foreground: 45 20% 90%;
+    --sidebar-border: 220 15% 18%;
+    --sidebar-ring: 145 63% 42%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+}
+
+@layer components {
+  .hero-gradient {
+    background: var(--hero-gradient);
+  }
+
+  .product-card-hover {
+    @apply transition-all duration-300;
+  }
+  .product-card-hover:hover {
+    @apply shadow-lg -translate-y-1;
+  }
+
+  .badge-sale {
+    @apply bg-destructive text-destructive-foreground text-xs font-semibold px-2 py-0.5 rounded-full;
+  }
+
+  .badge-new {
+    background: hsl(var(--badge-new));
+    @apply text-xs font-semibold px-2 py-0.5 rounded-full;
+    color: white;
+  }
+}

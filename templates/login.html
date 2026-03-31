@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Login | ZMart{% endblock %}
+{% block content %}
+<section class="auth-layout">
+    <div class="auth-panel">
+        <span class="eyebrow">Welcome Back</span>
+        <h1>Login to continue shopping and managing your supermart workflow.</h1>
+        <p>Use different accounts to demo customer, viewer, editor, and admin access.</p>
+    </div>
+    <form method="post" class="auth-form glass-card">
+        <h2>Login</h2>
+        <label>Email</label>
+        <input type="email" name="email" placeholder="Enter your email" required>
+        <label>Password</label>
+        <input type="password" name="password" placeholder="Enter your password" required>
+        <button type="submit" class="btn btn-primary">Login</button>
+    </form>
+</section>
+{% endblock %}

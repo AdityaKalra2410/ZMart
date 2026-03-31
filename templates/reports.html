@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Reports | ZMart{% endblock %}
+{% block content %}
+<section class="section">
+    <div class="section-heading">
+        <h1>Reports Dashboard</h1>
+        <p>Useful for demonstrating read-only and read-update users.</p>
+    </div>
+
+    {% if db_error %}
+        <div class="info-card warning-card">
+            <strong>Database connection pending.</strong>
+            <p>{{ db_error }}</p>
+        </div>
+    {% endif %}
+
+    <div class="stats-grid">
+        <article class="mini-card">
+            <h3>{{ summary.user_count }}</h3>
+            <p>Total Users</p>
+        </article>
+        <article class="mini-card">
+            <h3>{{ summary.product_count }}</h3>
+            <p>Total Products</p>
+        </article>
+        <article class="mini-card">
+            <h3>{{ summary.order_count }}</h3>
+            <p>Total Orders</p>
+        </article>
+        <article class="mini-card">
+            <h3>Rs. {{ summary.sales_total }}</h3>
+            <p>Total Sales</p>
+        </article>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Register | ZMart{% endblock %}
+{% block content %}
+<section class="auth-layout">
+    <div class="auth-panel">
+        <span class="eyebrow">Create Account</span>
+        <h1>Register new customers directly into the MySQL user table.</h1>
+        <p>This helps you show frontend form design and backend insertion during evaluation.</p>
+    </div>
+    <form method="post" class="auth-form glass-card">
+        <h2>Register</h2>
+        <label>Full Name</label>
+        <input type="text" name="full_name" placeholder="Enter full name" required>
+        <label>Email</label>
+        <input type="email" name="email" placeholder="Enter email" required>
+        <label>Password</label>
+        <input type="password" name="password" placeholder="Create password" required>
+        <label>Phone</label>
+        <input type="text" name="phone" placeholder="Enter phone number" required>
+        <button type="submit" class="btn btn-primary">Create Account</button>
+    </form>
+</section>
+{% endblock %}

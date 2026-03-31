@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name if product else 'Product' }} | ZMart{% endblock %}
+{% block content %}
+<section class="section">
+    {% if db_error %}
+        <div class="info-card warning-card">
+            <strong>Product could not be loaded.</strong>
+            <p>{{ db_error }}</p>
+        </div>
+    {% endif %}
+
+    {% if product %}
+        <div class="product-detail-layout">
+            <div class="product-detail-media">
+                <img src="{{ product.image_url or 'https://images.unsplash.com/photo-1583258292688-d0213dc5a3a8?auto=format&fit=crop&w=1200&q=80' }}" alt="{{ product.name }}">
+            </div>
+
+            <div class="product-detail-copy">
+                <span class="chip">{{ product.category }}</span>
+                <h1>{{ product.name }}</h1>
+                <p>{{ product.description or 'No description available for this product right now.' }}</p>
+
+                <div class="detail-price-row">
+                    <strong>Rs. {{ product.price }}</strong>
+                    <span>{{ product.stock_quantity }} in stock</span>
+                </div>
+
+                {% if session.get('user_id') %}
+                    <form method="post" action="{{ url_for('cart') }}" class="detail-cart-form">
+                        <input type="hidden" name="product_id" value="{{ product.product_id }}">
+                        <label for="quantity">Quantity</label>
+                        <input id="quantity" type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity if product.stock_quantity > 0 else 1 }}">
+                        <button class="btn btn-primary" type="submit" {% if product.stock_quantity == 0 %}disabled{% endif %}>Add to Cart</button>
+                    </form>
+                {% else %}
+                    <div class="info-card">
+                        <strong>Login required</strong>
+                        <p>Please log in to add this product to your cart.</p>
+                        <a href="{{ url_for('login') }}" class="btn btn-primary btn-small">Login</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

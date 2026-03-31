@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | ZMart{% endblock %}
+{% block content %}
+<section class="section">
+    <div class="dashboard-hero glass-card">
+        <span class="eyebrow">User Dashboard</span>
+        <h1>Hello, {{ session.get('full_name') }}</h1>
+        <p>Role: <strong>{{ session.get('role') }}</strong></p>
+    </div>
+
+    <div class="dashboard-grid">
+        <a class="mini-card" href="{{ url_for('products') }}">
+            <h3>Browse Products</h3>
+            <p>Customer shopping interface</p>
+        </a>
+        <a class="mini-card" href="{{ url_for('cart') }}">
+            <h3>View Cart</h3>
+            <p>See cart and checkout flow</p>
+        </a>
+        <a class="mini-card" href="{{ url_for('reports') }}">
+            <h3>Reports</h3>
+            <p>Use this for viewer and editor demo</p>
+        </a>
+        {% if session.get('role') in ['admin', 'editor'] %}
+            <a class="mini-card" href="{{ url_for('admin') }}">
+                <h3>Admin Panel</h3>
+                <p>Add and manage supermarket products</p>
+            </a>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

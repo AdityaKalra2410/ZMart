@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Cart | ZMart{% endblock %}
+{% block content %}
+<section class="section narrow-section">
+    <div class="section-heading">
+        <h1>Your Cart</h1>
+        <p>Review selected products and place order.</p>
+    </div>
+
+    <div class="table-card">
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart_items %}
+                    <tr>
+                        <td>{{ item.name }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>Rs. {{ item.price }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="3">No items in cart yet.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="checkout-bar glass-card">
+        <h3>Total: Rs. {{ total }}</h3>
+        <form method="post" action="{{ url_for('checkout') }}">
+            <button class="btn btn-primary" type="submit">Place Order</button>
+        </form>
+    </div>
+</section>
+{% endblock %}
