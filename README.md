@@ -15,7 +15,7 @@
 
 ## About The Project
 
-ZMart is an online supermarket management website created as a DBMS-based academic project.  
+ZMart is an online supermarket management website.  
 It allows users to register, log in, browse products, add items to cart, save favourites, and place orders.  
 On the admin side, products can be added, edited, and deleted through a connected Flask + MySQL backend.
 
