@@ -241,8 +241,8 @@ The Flask backend handles:
 ## Team Members
 
 - Aditya Kalra - 2024A7PS0536G
-- ANUJ P. SARDA - 2024A7PS0528G
-- JYOT KAVI - 2024A7PS0594G
+- Anuj P. Sarda - 2024A7PS0528G
+- Jyot Kavi - 2024A7PS0594G
 - Ved Aniruddha Joshi - 2024A7PS0542G
 - Mayank Ajay Bhojwani - 2024A7PS0639G
 - Sidhant Bhutani - 2024A7PS0535G
