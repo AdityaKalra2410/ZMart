@@ -1,97 +1,250 @@
 # ZMart
 
-ZMart is a supermarket web application built using Flask, MySQL, HTML, CSS, and JavaScript.
+<p align="center">
+  A modern supermarket web application built with Flask, MySQL, HTML, CSS, and JavaScript.
+</p>
 
-It includes:
-- customer login and registration
-- product listing and product detail page
-- cart and checkout flow
-- admin product management
-- reports page
+<p align="center">
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.x-blue?style=for-the-badge&logo=python">
+  <img alt="Flask" src="https://img.shields.io/badge/Flask-Backend-black?style=for-the-badge&logo=flask">
+  <img alt="MySQL" src="https://img.shields.io/badge/MySQL-Database-orange?style=for-the-badge&logo=mysql">
+  <img alt="HTML" src="https://img.shields.io/badge/Frontend-HTML%20%7C%20CSS%20%7C%20JS-green?style=for-the-badge">
+</p>
+
+---
+
+## About The Project
+
+ZMart is an online supermarket management website created as a DBMS-based academic project.  
+It allows users to register, log in, browse products, add items to cart, save favourites, and place orders.  
+On the admin side, products can be added, edited, and deleted through a connected Flask + MySQL backend.
+
+The project focuses on:
+- frontend and backend integration
+- proper relational database design
+- role-based admin/customer flows
+- dynamic product and cart management
+- modern supermarket-style UI interactions
+
+---
+
+## Features
+
+- User registration and login
+- Product listing with search and category filtering
+- Product detail page
+- Add to cart and checkout flow
+- Quantity increase/decrease in cart
+- Remove items from cart
+- Favourites system
+- Mini cart drawer
+- Admin product add, edit, and delete
+- Reports dashboard
 - AI assistant page
+- Responsive homepage banners and offer sections
+
+---
 
 ## Tech Stack
 
-- Python Flask
-- MySQL
+### Frontend
 - HTML
 - CSS
 - JavaScript
+
+### Backend
+- Python
+- Flask
+
+### Database
+- MySQL
+
+### Other Tools
+- Git
+- GitHub
+
+---
 
 ## Project Structure
 
 ```text
 ZMart/
-├── app.py
-├── config.py
-├── db.py
-├── requirements.txt
-├── templates/
-├── static/
-└── database/
+|-- app.py
+|-- config.py
+|-- db.py
+|-- requirements.txt
+|-- README.md
+|-- .gitignore
+|-- templates/
+|   |-- base.html
+|   |-- index.html
+|   |-- login.html
+|   |-- register.html
+|   |-- products.html
+|   |-- product_detail.html
+|   |-- cart.html
+|   |-- favorites.html
+|   |-- admin.html
+|   |-- edit_product.html
+|   |-- dashboard.html
+|   |-- reports.html
+|   |-- ai_assistant.html
+|-- static/
+|   |-- css/
+|   |   |-- style.css
+|   |-- js/
+|       |-- app.js
+|-- database/
+|   |-- zmart_setup.sql
+|   |-- grants_reference.sql
 ```
 
-## Database Setup
+---
 
-1. Open MySQL.
-2. Run the SQL file:
+## Database Design
+
+The main tables used in the project are:
+
+- `users`
+- `categories`
+- `products`
+- `cart`
+- `orders`
+- `order_items`
+- `reviews`
+- `favorites`
+
+These tables are connected using primary keys and foreign keys to support proper DBMS relationships.
+
+Database setup file:
+- [`database/zmart_setup.sql`](database/zmart_setup.sql)
+
+---
+
+## Installation
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/AdityaKalra2410/ZMart.git
+cd ZMart
+```
+
+### 2. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Setup the database
+
+Open MySQL and run:
 
 ```sql
 SOURCE database/zmart_setup.sql;
 ```
 
-Or open and execute:
+### 4. Configure database credentials
 
-[`database/zmart_setup.sql`](C:\Users\OMEN\Documents\ZMart\database\zmart_setup.sql)
+Update the values in [`config.py`](config.py):
 
-## Install Dependencies
+- `MYSQL_HOST`
+- `MYSQL_PORT`
+- `MYSQL_USER`
+- `MYSQL_PASSWORD`
+- `MYSQL_DATABASE`
 
-Open terminal in the project folder and run:
+### 5. Run the project
 
-```powershell
-pip install -r requirements.txt
-```
-
-## Configure Database
-
-Update MySQL settings in:
-
-[`config.py`](C:\Users\OMEN\Documents\ZMart\config.py)
-
-Make sure these match your system:
-- MySQL host
-- MySQL port
-- MySQL username
-- MySQL password
-- database name
-
-## Run the Project
-
-```powershell
+```bash
 python app.py
 ```
 
-Then open:
+Open in browser:
 
-[http://127.0.0.1:5000](http://127.0.0.1:5000)
+```text
+http://127.0.0.1:5000
+```
 
-## Main Features
+---
 
-- homepage with search and category browsing
-- products page with filters
-- product detail page
-- register and login
-- cart and checkout
-- admin product add, edit, and delete
-- reports dashboard
-- AI shopping assistant
+## Main Pages
 
-## Demo Accounts
+- **Home Page**  
+  Promotional banner, category cards, top offers, and featured products
 
-You can create accounts from the register page, or insert admin/customer users directly into the `users` table.
+- **Login / Register**  
+  Customer authentication interface
 
-## Notes
+- **Products Page**  
+  Product cards, search, category filters, favourites, and add-to-cart actions
 
-- MySQL must be running before starting Flask.
-- The project uses your local MySQL database.
-- Product images are currently added using image URLs.
+- **Product Detail Page**  
+  Full product information with quantity selection
+
+- **Cart Page**  
+  Quantity update, remove item, and checkout
+
+- **Favourites Page**  
+  Saved products section
+
+- **Admin Panel**  
+  Add, edit, and delete products
+
+- **Reports Page**  
+  User, product, order, and sales summary
+
+- **AI Assistant Page**  
+  Shopping suggestion interface
+
+---
+
+## Frontend Highlights
+
+The frontend was designed to resemble a modern online grocery platform and includes:
+
+- sticky search bar
+- promotional banner slider
+- category cards
+- offer cards
+- product hover effects
+- favourites toggle
+- mini cart drawer
+- floating AI assistant button
+
+---
+
+## Backend Highlights
+
+The Flask backend handles:
+
+- route management
+- form submission
+- login and session handling
+- MySQL connectivity
+- product CRUD operations
+- cart and checkout flow
+- favourites integration
+
+---
+
+## Future Improvements
+
+- product image upload from local system
+- order history page
+- improved admin analytics
+- payment gateway integration
+- live search suggestions
+
+---
+
+## Author
+
+**Aditya Kalra**  
+GitHub: [@AdityaKalra2410](https://github.com/AdityaKalra2410)
+
+---
+
+## Repository Link
+
+Project Repository: [ZMart on GitHub](https://github.com/AdityaKalra2410/ZMart)
