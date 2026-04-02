@@ -252,3 +252,9 @@ The Flask backend handles:
 ## Repository Link
 
 Project Repository: [ZMart on GitHub](https://github.com/AdityaKalra2410/ZMart)
+
+---
+
+## Final Note
+
+This project demonstrates strong relational database design, backend integration, and practical DBMS implementation.
