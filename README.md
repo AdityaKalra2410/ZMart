@@ -238,10 +238,14 @@ The Flask backend handles:
 
 ---
 
-## Author
+## Team Members
 
-**Aditya Kalra**  
-GitHub: [@AdityaKalra2410](https://github.com/AdityaKalra2410)
+- Aditya Kalra - 2024A7PS0536G
+- ANUJ P. SARDA - 2024A7PS0528G
+- JYOT KAVI - 2024A7PS0594G
+- Ved Aniruddha Joshi - 2024A7PS0542G
+- Mayank Ajay Bhojwani - 2024A7PS0639G
+- Sidhant Bhutani - 2024A7PS0535G
 
 ---
 
