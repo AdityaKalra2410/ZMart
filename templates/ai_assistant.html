@@ -3,21 +3,53 @@
 {% block content %}
 <section class="section narrow-section">
     <div class="section-heading">
-        <h1>ZMart AI Assistant</h1>
-        <p>Simple shopping suggestion module for your project evaluation demo.</p>
+        <h1>ZMart AI Shopping Assistant</h1>
+        <p>Ask for budget baskets, healthy products, party snacks, breakfast ideas, or cleaning essentials using the current store inventory.</p>
     </div>
 
-    <form method="post" class="glass-card form-card">
-        <label>Ask for a recommendation</label>
-        <textarea name="prompt" rows="5" placeholder="Example: suggest healthy breakfast items under a budget"></textarea>
-        <button type="submit" class="btn btn-primary">Get Suggestion</button>
-    </form>
-
-    {% if suggestion %}
-        <div class="info-card">
-            <strong>Assistant Response</strong>
-            <p>{{ suggestion }}</p>
+    <div class="glass-card assistant-panel assistant-panel-centered">
+        <div class="assistant-intro">
+            <span class="eyebrow">Smart Suggestions</span>
+            <h2>Try one of these quick prompts</h2>
         </div>
-    {% endif %}
+
+        <div class="assistant-chip-grid">
+            <button type="button" class="assistant-chip" data-assistant-prompt="Suggest healthy grocery items">Healthy picks</button>
+            <button type="button" class="assistant-chip" data-assistant-prompt="Give me protein rich products">Protein basket</button>
+            <button type="button" class="assistant-chip" data-assistant-prompt="Suggest party snacks and drinks">Party snacks</button>
+            <button type="button" class="assistant-chip" data-assistant-prompt="Suggest breakfast items under Rs. 300">Breakfast under Rs. 300</button>
+            <button type="button" class="assistant-chip" data-assistant-prompt="Show me cleaning products">Cleaning essentials</button>
+            <button type="button" class="assistant-chip" data-assistant-prompt="Suggest products under Rs. 500">Budget basket</button>
+        </div>
+
+        <form method="post" class="assistant-form" data-assistant-form>
+            <label for="assistant-prompt">Ask the assistant</label>
+            <textarea id="assistant-prompt" name="prompt" rows="5" placeholder="Example: suggest healthy breakfast items under Rs. 500" required>{{ request.form.get('prompt', '') }}</textarea>
+            <button type="submit" class="btn btn-primary">Get Suggestions</button>
+        </form>
+
+        <div class="assistant-results assistant-results-inline" data-assistant-results>
+            {% if assistant_result %}
+                <div class="assistant-response-card">
+                    <strong>Assistant Reply</strong>
+                    <p>{{ assistant_result.reply }}</p>
+                    {% if assistant_result.summary %}
+                        <span class="assistant-summary">{{ assistant_result.summary }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="assistant-recommendation-grid">
+                    {% for product in assistant_result.recommendations %}
+                        <article class="assistant-product-card">
+                            <span class="chip">{{ product.category }}</span>
+                            <h3>{{ product.name }}</h3>
+                            <p>Rs. {{ product.price }} · {{ product.stock_quantity }} in stock</p>
+                            <a href="{{ url_for('product_detail', product_id=product.product_id) }}" class="btn btn-secondary btn-small">View Product</a>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
 </section>
 {% endblock %}

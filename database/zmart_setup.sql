@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     phone VARCHAR(20),
     address TEXT,
-    role ENUM('customer', 'admin') DEFAULT 'customer',
+    role ENUM('customer', 'admin', 'manager') DEFAULT 'customer',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

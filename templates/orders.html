@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Your Orders | ZMart{% endblock %}
+{% block content %}
+<section class="section">
+    <div class="section-heading">
+        <span class="eyebrow">Order History</span>
+        <h1>{% if is_manager_view %}Manage Orders{% else %}Your Orders{% endif %}</h1>
+        <p>
+            {% if is_manager_view %}
+                View all customer orders, track what is still pending, and mark delivered orders when they are completed.
+            {% else %}
+                Track the orders that are still in progress and the ones that have already been completed.
+            {% endif %}
+        </p>
+    </div>
+
+    {% if db_error %}
+        <div class="info-card warning-card">
+            <strong>Could not load orders.</strong>
+            <p>{{ db_error }}</p>
+        </div>
+    {% endif %}
+
+    <div class="orders-section">
+        <div class="orders-section-heading">
+            <h2>Pending Orders</h2>
+            <span class="orders-count">{{ pending_orders|length }}</span>
+        </div>
+
+        <div class="orders-stack">
+            {% for order in pending_orders %}
+                <article class="order-card">
+                    <div class="order-card-top">
+                        <div>
+                            <strong>Order #{{ order.order_id }}</strong>
+                            <p>Placed on {{ order.ordered_at.strftime('%d %b %Y, %I:%M %p') if order.ordered_at else 'Recently' }}</p>
+                            {% if is_manager_view %}
+                                <p>Customer: {{ order.customer_name }}</p>
+                            {% endif %}
+                        </div>
+                        <span class="order-status status-pending">{{ order.status|title }}</span>
+                    </div>
+
+                    <div class="order-items">
+                        {% for item in order.line_items %}
+                            <div class="order-item-row">
+                                <div class="order-item-main">
+                                    <img src="{{ item.image_url or 'https://images.unsplash.com/photo-1583258292688-d0213dc5a3a8?auto=format&fit=crop&w=400&q=80' }}" alt="{{ item.name }}">
+                                    <div>
+                                        <h3>{{ item.name }}</h3>
+                                        <p>Qty: {{ item.quantity }}</p>
+                                    </div>
+                                </div>
+                                <strong>Rs. {{ '%.2f'|format(item.unit_price * item.quantity) }}</strong>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="order-card-bottom">
+                        <span>Delivery address: {{ order.delivery_address }}</span>
+                        <div class="order-bottom-actions">
+                            <strong>Total: Rs. {{ '%.2f'|format(order.total_amount) }}</strong>
+                            {% if is_manager_view and order.status != 'delivered' %}
+                                <form method="post" action="{{ url_for('mark_order_delivered', order_id=order.order_id) }}">
+                                    <button type="submit" class="btn btn-primary btn-small">Mark as Delivered</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </article>
+            {% else %}
+                <div class="assistant-empty-state">
+                    <strong>No pending orders right now.</strong>
+                    <p>Your active orders will appear here after checkout.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="orders-section">
+        <div class="orders-section-heading">
+            <h2>Completed Orders</h2>
+            <span class="orders-count">{{ completed_orders|length }}</span>
+        </div>
+
+        <div class="orders-stack">
+            {% for order in completed_orders %}
+                <article class="order-card">
+                    <div class="order-card-top">
+                        <div>
+                            <strong>Order #{{ order.order_id }}</strong>
+                            <p>Placed on {{ order.ordered_at.strftime('%d %b %Y, %I:%M %p') if order.ordered_at else 'Recently' }}</p>
+                            {% if is_manager_view %}
+                                <p>Customer: {{ order.customer_name }}</p>
+                            {% endif %}
+                        </div>
+                        <span class="order-status status-complete">{{ order.status|title }}</span>
+                    </div>
+
+                    <div class="order-items">
+                        {% for item in order.line_items %}
+                            <div class="order-item-row">
+                                <div class="order-item-main">
+                                    <img src="{{ item.image_url or 'https://images.unsplash.com/photo-1583258292688-d0213dc5a3a8?auto=format&fit=crop&w=400&q=80' }}" alt="{{ item.name }}">
+                                    <div>
+                                        <h3>{{ item.name }}</h3>
+                                        <p>Qty: {{ item.quantity }}</p>
+                                    </div>
+                                </div>
+                                <strong>Rs. {{ '%.2f'|format(item.unit_price * item.quantity) }}</strong>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="order-card-bottom">
+                        <span>Delivery address: {{ order.delivery_address }}</span>
+                        <div class="order-bottom-actions">
+                            <strong>Total: Rs. {{ '%.2f'|format(order.total_amount) }}</strong>
+                        </div>
+                    </div>
+                </article>
+            {% else %}
+                <div class="assistant-empty-state">
+                    <strong>No completed orders yet.</strong>
+                    <p>Delivered or closed orders will show up here.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

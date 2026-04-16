@@ -166,4 +166,90 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     });
+
+    const assistantForm = document.querySelector("[data-assistant-form]");
+    const assistantResults = document.querySelector("[data-assistant-results]");
+    const assistantPromptInput = document.querySelector("#assistant-prompt");
+    const assistantPromptButtons = document.querySelectorAll("[data-assistant-prompt]");
+
+    const renderAssistantResult = (data) => {
+        if (!assistantResults) {
+            return;
+        }
+
+        const summaryMarkup = data.summary
+            ? `<span class="assistant-summary">${data.summary}</span>`
+            : "";
+
+        const recommendationsMarkup = (data.recommendations || []).length
+            ? `<div class="assistant-recommendation-grid">
+                ${data.recommendations.map((product) => `
+                    <article class="assistant-product-card">
+                        <span class="chip">${product.category}</span>
+                        <h3>${product.name}</h3>
+                        <p>Rs. ${product.price} · ${product.stock_quantity} in stock</p>
+                        <a href="/product/${product.product_id}" class="btn btn-secondary btn-small">View Product</a>
+                    </article>
+                `).join("")}
+               </div>`
+            : `<div class="assistant-empty-state"><strong>No product suggestions found.</strong><p>Try another shopping request.</p></div>`;
+
+        assistantResults.innerHTML = `
+            <div class="assistant-response-card">
+                <strong>Assistant Reply</strong>
+                <p>${data.reply}</p>
+                ${summaryMarkup}
+            </div>
+            ${recommendationsMarkup}
+        `;
+    };
+
+    assistantPromptButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            if (assistantPromptInput) {
+                assistantPromptInput.value = button.getAttribute("data-assistant-prompt") || "";
+                assistantPromptInput.focus();
+            }
+        });
+    });
+
+    assistantForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        if (!assistantPromptInput || !assistantResults) {
+            return;
+        }
+
+        const prompt = assistantPromptInput.value.trim();
+        if (!prompt) {
+            return;
+        }
+
+        assistantResults.innerHTML = `
+            <div class="assistant-response-card">
+                <strong>Thinking...</strong>
+                <p>Looking through the current inventory for the best matches.</p>
+            </div>
+        `;
+
+        try {
+            const response = await fetch("/api/ai-assistant", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ prompt }),
+            });
+
+            const data = await response.json();
+            renderAssistantResult(data);
+        } catch (error) {
+            assistantResults.innerHTML = `
+                <div class="assistant-response-card">
+                    <strong>Assistant unavailable</strong>
+                    <p>Something went wrong while fetching suggestions. Please try again.</p>
+                </div>
+            `;
+        }
+    });
 });

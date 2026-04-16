@@ -1,4 +1,5 @@
 from functools import wraps
+import re
 
 from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for
 
@@ -131,6 +132,85 @@ def fetch_favorite_products(user_id):
         return cursor.fetchall()
 
 
+def fetch_orders(user_id=None):
+    with db_cursor() as (_, cursor):
+        if user_id is None:
+            cursor.execute(
+                """
+                SELECT
+                    o.order_id,
+                    o.user_id,
+                    u.name AS customer_name,
+                    o.total_amount,
+                    o.status,
+                    o.delivery_address,
+                    o.ordered_at
+                FROM orders o
+                JOIN users u ON u.user_id = o.user_id
+                ORDER BY o.ordered_at DESC, o.order_id DESC
+                """
+            )
+        else:
+            cursor.execute(
+                """
+                SELECT
+                    o.order_id,
+                    o.user_id,
+                    u.name AS customer_name,
+                    o.total_amount,
+                    o.status,
+                    o.delivery_address,
+                    o.ordered_at
+                FROM orders o
+                JOIN users u ON u.user_id = o.user_id
+                WHERE o.user_id = %s
+                ORDER BY o.ordered_at DESC, o.order_id DESC
+                """,
+                (user_id,),
+            )
+        orders = cursor.fetchall()
+
+        if not orders:
+            return [], []
+
+        order_lookup = {order["order_id"]: {**order, "line_items": []} for order in orders}
+        order_ids = tuple(order_lookup.keys())
+        placeholders = ", ".join(["%s"] * len(order_ids))
+
+        cursor.execute(
+            f"""
+            SELECT
+                oi.order_id,
+                oi.quantity,
+                oi.unit_price,
+                p.product_id,
+                p.name,
+                p.image_url
+            FROM order_items oi
+            JOIN products p ON p.product_id = oi.product_id
+            WHERE oi.order_id IN ({placeholders})
+            ORDER BY oi.order_id DESC, oi.item_id ASC
+            """,
+            order_ids,
+        )
+        items = cursor.fetchall()
+
+    for item in items:
+        order_lookup[item["order_id"]]["line_items"].append(item)
+
+    pending_statuses = {"pending", "confirmed", "shipped"}
+    pending_orders = []
+    completed_orders = []
+
+    for order in order_lookup.values():
+        if order["status"] in pending_statuses:
+            pending_orders.append(order)
+        else:
+            completed_orders.append(order)
+
+    return pending_orders, completed_orders
+
+
 @app.context_processor
 def inject_header_state():
     cart_items = []
@@ -139,7 +219,7 @@ def inject_header_state():
     favorite_ids = set()
 
     user_id = session.get("user_id")
-    if user_id:
+    if user_id and session.get("role") != "manager":
         try:
             cart_items = fetch_cart_items_for_user(user_id)
             cart_count = sum(item["quantity"] for item in cart_items)
@@ -339,16 +419,60 @@ def toggle_favorite(product_id):
 def cart():
     if request.method == "POST":
         product_id = request.form.get("product_id")
-        quantity = int(request.form.get("quantity", "1"))
+        quantity = max(1, int(request.form.get("quantity", "1")))
 
         with db_cursor() as (_, cursor):
             cursor.execute(
                 """
-                INSERT INTO cart (user_id, product_id, quantity)
-                VALUES (%s, %s, %s)
+                SELECT product_id, name, stock_quantity
+                FROM products
+                WHERE product_id = %s
                 """,
-                (session["user_id"], product_id, quantity),
+                (product_id,),
             )
+            product = cursor.fetchone()
+
+            if not product:
+                flash("Product not found.", "warning")
+                return redirect(url_for("products"))
+
+            cursor.execute(
+                """
+                SELECT cart_id, quantity
+                FROM cart
+                WHERE user_id = %s AND product_id = %s
+                ORDER BY cart_id ASC
+                LIMIT 1
+                """,
+                (session["user_id"], product_id),
+            )
+            existing_item = cursor.fetchone()
+
+            existing_quantity = existing_item["quantity"] if existing_item else 0
+            if existing_quantity + quantity > product["stock_quantity"]:
+                flash(
+                    f"Only {product['stock_quantity']} units of {product['name']} are available right now.",
+                    "warning",
+                )
+                return redirect(url_for("products"))
+
+            if existing_item:
+                cursor.execute(
+                    """
+                    UPDATE cart
+                    SET quantity = %s
+                    WHERE cart_id = %s AND user_id = %s
+                    """,
+                    (existing_quantity + quantity, existing_item["cart_id"], session["user_id"]),
+                )
+            else:
+                cursor.execute(
+                    """
+                    INSERT INTO cart (user_id, product_id, quantity)
+                    VALUES (%s, %s, %s)
+                    """,
+                    (session["user_id"], product_id, quantity),
+                )
 
         flash("Item added to cart.", "success")
         return redirect(url_for("cart"))
@@ -394,7 +518,12 @@ def update_cart_item(cart_id):
     try:
         with db_cursor() as (_, cursor):
             cursor.execute(
-                "SELECT quantity FROM cart WHERE cart_id = %s AND user_id = %s",
+                """
+                SELECT c.quantity, p.stock_quantity, p.name
+                FROM cart c
+                JOIN products p ON p.product_id = c.product_id
+                WHERE c.cart_id = %s AND c.user_id = %s
+                """,
                 (cart_id, session["user_id"]),
             )
             item = cursor.fetchone()
@@ -405,6 +534,12 @@ def update_cart_item(cart_id):
 
             quantity = item["quantity"]
             if action == "increase":
+                if quantity >= item["stock_quantity"]:
+                    flash(
+                        f"Only {item['stock_quantity']} units of {item['name']} are available right now.",
+                        "warning",
+                    )
+                    return redirect(redirect_to)
                 quantity += 1
                 cursor.execute(
                     "UPDATE cart SET quantity = %s WHERE cart_id = %s AND user_id = %s",
@@ -434,7 +569,7 @@ def checkout():
     with db_cursor() as (_, cursor):
         cursor.execute(
             """
-            SELECT c.product_id, c.quantity, p.price
+            SELECT c.product_id, c.quantity, p.price, p.stock_quantity, p.name
             FROM cart c
             JOIN products p ON p.product_id = c.product_id
             WHERE c.user_id = %s
@@ -442,6 +577,18 @@ def checkout():
             (session["user_id"],),
         )
         cart_items = cursor.fetchall()
+
+        if not cart_items:
+            flash("Your cart is empty.", "warning")
+            return redirect(url_for("cart"))
+
+        for item in cart_items:
+            if item["stock_quantity"] < item["quantity"]:
+                flash(
+                    f"Only {item['stock_quantity']} units of {item['name']} are available right now. Please update your cart.",
+                    "warning",
+                )
+                return redirect(url_for("cart"))
 
         order_total = sum(item["price"] * item["quantity"] for item in cart_items)
 
@@ -462,6 +609,14 @@ def checkout():
                 """,
                 (order_id, item["product_id"], item["quantity"], item["price"]),
             )
+            cursor.execute(
+                """
+                UPDATE products
+                SET stock_quantity = stock_quantity - %s
+                WHERE product_id = %s
+                """,
+                (item["quantity"], item["product_id"]),
+            )
 
         cursor.execute("DELETE FROM cart WHERE user_id = %s", (session["user_id"],))
 
@@ -469,12 +624,67 @@ def checkout():
     return redirect(url_for("dashboard"))
 
 
+@app.route("/orders")
+@login_required
+def orders():
+    db_error = None
+    pending_orders = []
+    completed_orders = []
+    is_manager_view = session.get("role") == "manager"
+
+    try:
+        pending_orders, completed_orders = fetch_orders(None if is_manager_view else session["user_id"])
+    except Exception as exc:
+        db_error = str(exc)
+
+    return render_template(
+        "orders.html",
+        pending_orders=pending_orders,
+        completed_orders=completed_orders,
+        db_error=db_error,
+        is_manager_view=is_manager_view,
+    )
+
+
+@app.route("/orders/<int:order_id>/mark-delivered", methods=["POST"])
+@login_required
+@role_required("admin", "manager")
+def mark_order_delivered(order_id):
+    try:
+        with db_cursor() as (_, cursor):
+            cursor.execute(
+                """
+                UPDATE orders
+                SET status = 'delivered'
+                WHERE order_id = %s
+                """,
+                (order_id,),
+            )
+        flash("Order marked as delivered.", "success")
+    except Exception as exc:
+        flash(f"Could not update order status: {exc}", "danger")
+
+    return redirect(url_for("orders"))
+
+
 @app.route("/admin", methods=["GET", "POST"])
 @login_required
-@role_required("admin", "editor")
+@role_required("admin", "manager")
 def admin():
     categories = []
+    inventory_summary = {
+        "product_count": 0,
+        "total_stock_units": 0,
+        "low_stock_count": 0,
+        "category_count": 0,
+    }
+    is_manager = session.get("role") == "manager"
+
     if request.method == "POST":
+        if is_manager:
+            flash("Managers have view-only access.", "warning")
+            return redirect(url_for("admin"))
+
         form = request.form
         with db_cursor() as (_, cursor):
             cursor.execute(
@@ -500,14 +710,27 @@ def admin():
     try:
         product_list = fetch_products()
         categories = fetch_categories()
+        inventory_summary["product_count"] = len(product_list)
+        inventory_summary["category_count"] = len(categories)
+        inventory_summary["total_stock_units"] = sum(product["stock_quantity"] for product in product_list)
+        inventory_summary["low_stock_count"] = sum(
+            1 for product in product_list if product["stock_quantity"] <= 10
+        )
     except Exception as exc:
         db_error = str(exc)
-    return render_template("admin.html", products=product_list, categories=categories, db_error=db_error)
+    return render_template(
+        "admin.html",
+        products=product_list,
+        categories=categories,
+        inventory_summary=inventory_summary,
+        db_error=db_error,
+        is_manager=is_manager,
+    )
 
 
 @app.route("/admin/edit/<int:product_id>", methods=["GET", "POST"])
 @login_required
-@role_required("admin", "editor")
+@role_required("admin")
 def edit_product(product_id):
     db_error = None
 
@@ -561,7 +784,7 @@ def edit_product(product_id):
 
 @app.route("/admin/delete/<int:product_id>", methods=["POST"])
 @login_required
-@role_required("admin", "editor")
+@role_required("admin")
 def delete_product(product_id):
     try:
         with db_cursor() as (_, cursor):
@@ -578,7 +801,7 @@ def delete_product(product_id):
 
 @app.route("/reports")
 @login_required
-@role_required("admin", "editor", "viewer")
+@role_required("admin", "manager")
 def reports():
     summary = {"user_count": 0, "product_count": 0, "order_count": 0, "sales_total": 0}
     db_error = None
@@ -601,28 +824,185 @@ def reports():
 
 @app.route("/ai-assistant", methods=["GET", "POST"])
 def ai_assistant():
-    suggestion = None
+    assistant_result = None
     if request.method == "POST":
-        suggestion = generate_shopping_tip(request.form.get("prompt", "").lower())
-    return render_template("ai_assistant.html", suggestion=suggestion)
+        assistant_result = generate_shopping_tip(request.form.get("prompt", ""))
+    return render_template("ai_assistant.html", assistant_result=assistant_result)
 
 
 @app.route("/api/ai-assistant", methods=["POST"])
 def ai_api():
     prompt = request.json.get("prompt", "")
-    return jsonify({"response": generate_shopping_tip(prompt.lower())})
+    return jsonify(generate_shopping_tip(prompt))
 
 
 def generate_shopping_tip(prompt):
-    if "budget" in prompt:
-        return "For a budget-friendly basket, try rice, milk, eggs, bread, bananas, and seasonal vegetables."
-    if "protein" in prompt:
-        return "High-protein picks: paneer, eggs, curd, peanuts, lentils, and soya chunks."
-    if "party" in prompt:
-        return "For a party, stock soft drinks, chips, dips, paper cups, ice cream, and easy-to-serve snacks."
-    if "healthy" in prompt:
-        return "Healthy shopping list: oats, fruits, green vegetables, brown bread, sprouts, and yogurt."
-    return "Try searching by need, such as budget groceries, healthy items, protein-rich foods, or party supplies."
+    original_prompt = (prompt or "").strip()
+    normalized_prompt = original_prompt.lower()
+
+    try:
+        products = fetch_products()
+    except Exception:
+        products = []
+
+    if not original_prompt:
+        return {
+            "success": True,
+            "reply": "Ask me for ideas like a healthy basket, budget groceries under Rs. 500, party snacks, breakfast items, or cleaning supplies.",
+            "recommendations": [],
+        }
+
+    budget_match = re.search(r"(?:under|below|within|budget)\s*(?:rs\.?|₹)?\s*(\d+)", normalized_prompt)
+    budget = int(budget_match.group(1)) if budget_match else None
+
+    keyword_groups = {
+        "healthy": ["fruit", "fruits", "vegetable", "vegetables", "oats", "yogurt", "milk", "juice"],
+        "protein": ["egg", "eggs", "paneer", "milk", "curd", "lentil", "nuts", "banana"],
+        "party": ["chips", "snacks", "juice", "cola", "drink", "biscuits"],
+        "breakfast": ["milk", "bread", "oats", "cornflakes", "banana", "juice", "biscuit"],
+        "cleaning": ["soap", "surf", "vim", "clean", "detergent", "bar"],
+    }
+    category_preferences = {
+        "healthy": ["fruits", "beverages"],
+        "protein": ["fruits", "beverages", "snacks"],
+        "party": ["snacks", "beverages"],
+        "breakfast": ["beverages", "fruits", "snacks"],
+        "cleaning": ["cleaning"],
+    }
+
+    detected_intent = None
+    for intent, words in keyword_groups.items():
+        if any(word in normalized_prompt for word in words):
+            detected_intent = intent
+            break
+
+    matched_keywords = []
+    for words in keyword_groups.values():
+        if any(word in normalized_prompt for word in words):
+            matched_keywords.extend(words)
+
+    direct_terms = [term for term in re.findall(r"[a-zA-Z]+", normalized_prompt) if len(term) > 2]
+    search_terms = list(dict.fromkeys(matched_keywords + direct_terms))
+
+    scored_products = []
+    for product in products:
+        haystack = " ".join(
+            [
+                str(product.get("name", "")),
+                str(product.get("category", "")),
+                str(product.get("description", "")),
+            ]
+        ).lower()
+
+        score = 0
+        for term in search_terms:
+            if term in haystack:
+                score += 2
+
+        if budget is not None and product.get("price", 0) <= budget:
+            score += 1
+
+        if score > 0:
+            scored_products.append((score, product))
+
+    if budget is not None and not scored_products:
+        budget_products = [product for product in products if product.get("price", 0) <= budget]
+        budget_products = sorted(budget_products, key=lambda item: (item["price"], -item["stock_quantity"]))[:5]
+        total = sum(item["price"] for item in budget_products)
+        return {
+            "success": True,
+            "reply": f"For a budget under Rs. {budget}, here are some affordable products currently available in ZMart.",
+            "recommendations": [
+                {
+                    "product_id": item["product_id"],
+                    "name": item["name"],
+                    "category": item["category"],
+                    "price": item["price"],
+                    "stock_quantity": item["stock_quantity"],
+                }
+                for item in budget_products
+            ],
+            "summary": f"Suggested basket total: Rs. {total:.2f}",
+        }
+
+    if scored_products:
+        ranked = [product for _, product in sorted(scored_products, key=lambda entry: (-entry[0], entry[1]["price"]))[:5]]
+        summary = None
+        if budget is not None:
+            total = sum(item["price"] for item in ranked)
+            summary = f"Suggested basket total: Rs. {total:.2f}"
+
+        return {
+            "success": True,
+            "reply": build_assistant_reply(normalized_prompt, budget, ranked),
+            "recommendations": [
+                {
+                    "product_id": item["product_id"],
+                    "name": item["name"],
+                    "category": item["category"],
+                    "price": item["price"],
+                    "stock_quantity": item["stock_quantity"],
+                }
+                for item in ranked
+            ],
+            "summary": summary,
+        }
+
+    fallback_products = []
+    if detected_intent and detected_intent in category_preferences:
+        preferred_categories = category_preferences[detected_intent]
+        fallback_products = [
+            product for product in products
+            if str(product.get("category", "")).lower() in preferred_categories
+        ][:5]
+
+    if not fallback_products:
+        fallback_products = sorted(products, key=lambda item: (-item["stock_quantity"], item["price"]))[:5]
+
+    return {
+        "success": True,
+        "reply": build_fallback_reply(detected_intent),
+        "recommendations": [
+            {
+                "product_id": item["product_id"],
+                "name": item["name"],
+                "category": item["category"],
+                "price": item["price"],
+                "stock_quantity": item["stock_quantity"],
+            }
+            for item in fallback_products
+        ],
+    }
+
+
+def build_assistant_reply(normalized_prompt, budget, ranked_products):
+    if "healthy" in normalized_prompt:
+        return "Here are some healthier grocery picks from the current inventory that fit your request."
+    if "protein" in normalized_prompt:
+        return "These products are the strongest protein-oriented matches I found in the current inventory."
+    if "party" in normalized_prompt:
+        return "These products should work well for a party-style basket based on your request."
+    if "breakfast" in normalized_prompt:
+        return "Here are some breakfast-friendly picks from the current stock."
+    if "clean" in normalized_prompt or "soap" in normalized_prompt or "detergent" in normalized_prompt:
+        return "These are the closest cleaning and household matches available right now."
+    if budget is not None:
+        return f"Here are some relevant products I found for a budget around Rs. {budget}."
+    return "Here are the closest product matches from the current ZMart inventory."
+
+
+def build_fallback_reply(detected_intent):
+    if detected_intent == "healthy":
+        return "Based on the current inventory, these are the healthier options I can suggest right now."
+    if detected_intent == "protein":
+        return "Based on the current inventory, these are the closest protein-friendly options available right now."
+    if detected_intent == "party":
+        return "These are the closest party-friendly snacks and drinks available right now."
+    if detected_intent == "breakfast":
+        return "These are the closest breakfast-friendly items currently available in ZMart."
+    if detected_intent == "cleaning":
+        return "These are the cleaning and household items currently available in the store."
+    return "Here are some useful products from the current inventory that you can explore right now."
 
 
 if __name__ == "__main__":

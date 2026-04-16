@@ -2,33 +2,68 @@
 {% block title %}Admin | ZMart{% endblock %}
 {% block content %}
 <section class="section admin-layout">
-    <form method="post" class="glass-card form-card">
-        <h2>Add Product</h2>
-        <label>Name</label>
-        <input type="text" name="name" required>
-        <label>Category</label>
-        <select name="category" required>
-            <option value="">Select Category</option>
-            {% for category in categories %}
-                <option value="{{ category.category_id }}">{{ category.name }}</option>
-            {% endfor %}
-        </select>
-        <label>Price</label>
-        <input type="number" step="0.01" name="price" required>
-        <label>Stock</label>
-        <input type="number" name="stock" required>
-        <label>Image URL</label>
-        <input type="text" name="image_url">
-        <label>Description</label>
-        <textarea name="description" rows="4"></textarea>
-        <button type="submit" class="btn btn-primary">Create Product</button>
-    </form>
+    {% if not is_manager %}
+        <form method="post" class="glass-card form-card">
+            <h2>Add Product</h2>
+            <label>Name</label>
+            <input type="text" name="name" required>
+            <label>Category</label>
+            <select name="category" required>
+                <option value="">Select Category</option>
+                {% for category in categories %}
+                    <option value="{{ category.category_id }}">{{ category.name }}</option>
+                {% endfor %}
+            </select>
+            <label>Price</label>
+            <input type="number" step="0.01" name="price" required>
+            <label>Stock</label>
+            <input type="number" name="stock" required>
+            <label>Image URL</label>
+            <input type="text" name="image_url">
+            <label>Description</label>
+            <textarea name="description" rows="4"></textarea>
+            <button type="submit" class="btn btn-primary">Create Product</button>
+        </form>
+    {% else %}
+        <div class="glass-card form-card">
+            <h2>Manager Access</h2>
+            <p>You can view product names, prices, categories, and stock quantity here. Editing is disabled for managers.</p>
+        </div>
+    {% endif %}
 
     <div class="table-card">
         <div class="section-heading">
             <h2>Inventory</h2>
-            <p>Show product creation from frontend to backend.</p>
+            <p>{% if is_manager %}View-only stock overview for the manager role.{% else %}Show product creation from frontend to backend.{% endif %}</p>
         </div>
+
+        {% if is_manager %}
+            <div class="manager-stats-grid">
+                <article class="manager-stat-card">
+                    <span>Total Products</span>
+                    <strong>{{ inventory_summary.product_count }}</strong>
+                </article>
+                <article class="manager-stat-card">
+                    <span>Total Stock Units</span>
+                    <strong>{{ inventory_summary.total_stock_units }}</strong>
+                </article>
+                <article class="manager-stat-card">
+                    <span>Low Stock Products</span>
+                    <strong>{{ inventory_summary.low_stock_count }}</strong>
+                </article>
+                <article class="manager-stat-card">
+                    <span>Categories</span>
+                    <strong>{{ inventory_summary.category_count }}</strong>
+                </article>
+            </div>
+
+            {% if inventory_summary.low_stock_count > 0 %}
+                <div class="info-card warning-card manager-warning">
+                    <strong>Low stock alert</strong>
+                    <p>{{ inventory_summary.low_stock_count }} product{% if inventory_summary.low_stock_count != 1 %}s are{% else %} is{% endif %} at 10 units or below. Review the stock values in the inventory table below.</p>
+                </div>
+            {% endif %}
+        {% endif %}
 
         {% if db_error %}
             <div class="info-card warning-card">
@@ -45,27 +80,36 @@
                     <th>Category</th>
                     <th>Price</th>
                     <th>Stock</th>
-                    <th>Actions</th>
+                    {% if not is_manager %}
+                        <th>Actions</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
                 {% for product in products %}
-                    <tr>
+                    <tr {% if is_manager and product.stock_quantity <= 10 %}class="low-stock-row"{% endif %}>
                         <td>{{ product.product_id }}</td>
                         <td>{{ product.name }}</td>
                         <td>{{ product.category }}</td>
                         <td>Rs. {{ product.price }}</td>
-                        <td>{{ product.stock_quantity }}</td>
-                        <td class="action-cell">
-                            <a href="{{ url_for('edit_product', product_id=product.product_id) }}" class="btn btn-secondary btn-small">Edit</a>
-                            <form method="post" action="{{ url_for('delete_product', product_id=product.product_id) }}" onsubmit="return confirm('Delete this product?');">
-                                <button type="submit" class="btn btn-danger btn-small">Delete</button>
-                            </form>
+                        <td>
+                            {{ product.stock_quantity }}
+                            {% if is_manager and product.stock_quantity <= 10 %}
+                                <span class="stock-badge">Low</span>
+                            {% endif %}
                         </td>
+                        {% if not is_manager %}
+                            <td class="action-cell">
+                                <a href="{{ url_for('edit_product', product_id=product.product_id) }}" class="btn btn-secondary btn-small">Edit</a>
+                                <form method="post" action="{{ url_for('delete_product', product_id=product.product_id) }}" onsubmit="return confirm('Delete this product?');">
+                                    <button type="submit" class="btn btn-danger btn-small">Delete</button>
+                                </form>
+                            </td>
+                        {% endif %}
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="6">No products found.</td>
+                        <td colspan="{% if is_manager %}5{% else %}6{% endif %}">No products found.</td>
                     </tr>
                 {% endfor %}
             </tbody>

@@ -9,23 +9,46 @@
     </div>
 
     <div class="dashboard-grid">
-        <a class="mini-card" href="{{ url_for('products') }}">
-            <h3>Browse Products</h3>
-            <p>Customer shopping interface</p>
-        </a>
-        <a class="mini-card" href="{{ url_for('cart') }}">
-            <h3>View Cart</h3>
-            <p>See cart and checkout flow</p>
-        </a>
-        <a class="mini-card" href="{{ url_for('reports') }}">
-            <h3>Reports</h3>
-            <p>Use this for viewer and editor demo</p>
-        </a>
-        {% if session.get('role') in ['admin', 'editor'] %}
+        {% if session.get('role') == 'manager' %}
             <a class="mini-card" href="{{ url_for('admin') }}">
-                <h3>Admin Panel</h3>
-                <p>Add and manage supermarket products</p>
+                <h3>Inventory View</h3>
+                <p>Check product names, stock quantity, and pricing</p>
             </a>
+            <a class="mini-card" href="{{ url_for('orders') }}">
+                <h3>Order Management</h3>
+                <p>View all customer orders and mark them delivered</p>
+            </a>
+            <a class="mini-card" href="{{ url_for('reports') }}">
+                <h3>Reports</h3>
+                <p>View product and order counts</p>
+            </a>
+        {% else %}
+            <a class="mini-card" href="{{ url_for('products') }}">
+                <h3>Browse Products</h3>
+                <p>Customer shopping interface</p>
+            </a>
+            <a class="mini-card" href="{{ url_for('orders') }}">
+                <h3>Your Orders</h3>
+                <p>Track pending and completed orders</p>
+            </a>
+            <a class="mini-card" href="{{ url_for('cart') }}">
+                <h3>View Cart</h3>
+                <p>See cart and checkout flow</p>
+            </a>
+            <a class="mini-card" href="{{ url_for('favorites') }}">
+                <h3>Favourites</h3>
+                <p>Review the products you have saved</p>
+            </a>
+            {% if session.get('role') == 'admin' %}
+                <a class="mini-card" href="{{ url_for('reports') }}">
+                    <h3>Reports</h3>
+                    <p>View business summaries and counts</p>
+                </a>
+                <a class="mini-card" href="{{ url_for('admin') }}">
+                    <h3>Admin Panel</h3>
+                    <p>Add and manage supermarket products</p>
+                </a>
+            {% endif %}
         {% endif %}
     </div>
 </section>

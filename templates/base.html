@@ -26,16 +26,24 @@
 
             <div class="header-actions">
                 {% if session.get('user_id') %}
-                    <a href="{{ url_for('favorites') }}" class="header-link">Favourites</a>
-                    <a href="{{ url_for('dashboard') }}" class="header-link">Account</a>
-                    <a href="{{ url_for('logout') }}" class="header-link">Logout</a>
-                    <button type="button" class="cart-trigger cart-trigger-rich" data-cart-open>
-                        <span class="cart-icon">&#128722;</span>
-                        <span>My Cart</span>
-                        {% if header_cart_count %}
-                            <span class="cart-count">{{ header_cart_count }}</span>
-                        {% endif %}
-                    </button>
+                    {% if session.get('role') == 'manager' %}
+                        <a href="{{ url_for('admin') }}" class="header-link">Inventory</a>
+                        <a href="{{ url_for('orders') }}" class="header-link">Orders</a>
+                        <a href="{{ url_for('reports') }}" class="header-link">Reports</a>
+                        <a href="{{ url_for('logout') }}" class="header-link">Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('orders') }}" class="header-link">Orders</a>
+                        <a href="{{ url_for('favorites') }}" class="header-link">Favourites</a>
+                        <a href="{{ url_for('dashboard') }}" class="header-link">Account</a>
+                        <a href="{{ url_for('logout') }}" class="header-link">Logout</a>
+                        <button type="button" class="cart-trigger cart-trigger-rich" data-cart-open>
+                            <span class="cart-icon">&#128722;</span>
+                            <span>My Cart</span>
+                            {% if header_cart_count %}
+                                <span class="cart-count">{{ header_cart_count }}</span>
+                            {% endif %}
+                        </button>
+                    {% endif %}
                 {% else %}
                     <a href="{{ url_for('login') }}" class="header-link login-link">Login</a>
                     <a href="{{ url_for('register') }}" class="register-inline">Don't have an account? Register</a>
@@ -64,7 +72,7 @@
         <span>Assistant</span>
     </a>
 
-    {% if session.get('user_id') %}
+    {% if session.get('user_id') and session.get('role') != 'manager' %}
         <div class="cart-overlay" data-cart-overlay></div>
         <aside class="mini-cart-drawer" data-cart-drawer>
             <div class="mini-cart-header">
